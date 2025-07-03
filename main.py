@@ -81,14 +81,15 @@ def presenter(detect_queue):
 
         frame, detections, timestamp = data # parse all together
         
+        # Part 2 add blurring 
         for (x, y, w, h) in detections:
-            #region of interest 
+            # Region of interest 
             roi = frame[y:y+h, x:x+w]
             # Tried 3x3 7x7 and 15x15 seems that 15x15 the blurriest 
             blurred = cv2.GaussianBlur(roi, (15, 15), 0)
             frame[y:y+h, x:x+w] = blurred
     
-            #cv2.rectangle
+            # cv2.rectangle
             # The image to draw on
             # start point, Top-left corner of the rectangle
             # end point, Bottom-right corner of the rectangle
@@ -106,32 +107,34 @@ def presenter(detect_queue):
         # Render it on the screen 10ms
         cv2.waitKey(10)
 
-    # Close all windows 
-    #cv2.destroyAllWindows()
+    # Close all windows in end  
+    cv2.destroyAllWindows()
 
 
 def main():
 
     video_path = "People - 6387.mp4" # the video input 
 
-    #consumer produce style
-    # 2 queues one hold frames( streamer->detector), second holds frame and detection(detector->present) 
-    # help if one process slower than other it que frames 
-    # process safe
+    # Consumer Producer style, one process feeds the follow
+    # 2 queues one hold frames(streamer->detector), second holds frame and detection(detector->present) 
+    # Help if one process slower than other it queue frames 
     frame_queue = mp.Queue(maxsize=10)
     detect_queue = mp.Queue(maxsize=10)
 
-    p1 = mp.Process(target=streamer, args=(video_path, frame_queue))
-    p2 = mp.Process(target=detector, args=(frame_queue, detect_queue))
-    p3 = mp.Process(target=presenter, args=(detect_queue,))
+    streamer_process = mp.Process(target=streamer, args=(video_path, frame_queue))
+    detector_process = mp.Process(target=detector, args=(frame_queue, detect_queue))
+    presenter_process = mp.Process(target=presenter, args=(detect_queue,))
 
-    p1.start()
-    p2.start()
-    p3.start()
+    streamer_process.start()
+    detector_process.start()
+    presenter_process.start()
 
-    p1.join()
-    p2.join()
-    p3.join()
+    # Part 3, if videos ends 
+    streamer_process.join()
+    frame_queue.put(None)  # p1 ends, Ensures detector exits
+    detector_process.join()
+    detect_queue.put(None)  # p2 ends, Ensures presenter exits
+    presenter_process.join()
 
 
 if __name__ == '__main__':
