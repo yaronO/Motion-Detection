@@ -5,7 +5,7 @@ import numpy as np
 import datetime
 import imutils
 
-# Detecting algo, found in class to capsulate the algo and not read from anther file 
+# Detecting algo, found in class to capsulate the algo
 class MotionDetector:
     def __init__(self):
         self.prev_frame = None
@@ -53,15 +53,17 @@ def streamer(video_path, frame_queue):
         frame_queue.put(frame) # place frame in queue
         time.sleep(0.03) # frame produce rate seems ok no lags
     cap.release() #  Closes the video file or capturing device and releases associated resources
-    frame_queue.put(None) # End of process
+    
+    frame_queue.put(None) # Part 3 End of process send to detector to end
 
 
 def detector(frame_queue, detect_queue):
-    motion_detector = MotionDetector() # need to init prev_fram ( As detect algo does)
+    motion_detector = MotionDetector() # need to init prev_fram (As detect algo)
 
     # Wait until frame receive
     while True:
         frame = frame_queue.get() 
+        # Part 3 stop process  
         if frame is None:
             break
 
@@ -69,17 +71,18 @@ def detector(frame_queue, detect_queue):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") # add timestamp
         detect_queue.put((frame, detections, timestamp)) # tuple, to present process
 
-    detect_queue.put(None) # None frame received
+    detect_queue.put(None) # Part 3 End of process send to presenter to end
 
 
 def presenter(detect_queue):
-    # Wait to receive frame with detections and time 
+    # Wait to receive frame,detections, and time 
     while True:
         data = detect_queue.get()
+        # Part 3 close process 
         if data is None:
             break
 
-        frame, detections, timestamp = data # parse all together
+        frame, detections, timestamp = data # parse to individual variable
         
         # Part 2 add blurring 
         for (x, y, w, h) in detections:
@@ -107,7 +110,7 @@ def presenter(detect_queue):
         # Render it on the screen 10ms
         cv2.waitKey(10)
 
-    # Close all windows in end  
+    # Close all windows in end of videos 
     cv2.destroyAllWindows()
 
 
@@ -129,11 +132,9 @@ def main():
     detector_process.start()
     presenter_process.start()
 
-    # Part 3, if videos ends 
+    # Part 3 - in end video each queue in order send None to stop process 
     streamer_process.join()
-    frame_queue.put(None)  # streamer_process ends, Ensures detector exits
     detector_process.join()
-    detect_queue.put(None)  # detector_process ends, Ensures presenter exits
     presenter_process.join()
 
 
