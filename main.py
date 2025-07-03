@@ -131,9 +131,9 @@ def main():
 
     # Part 3, if videos ends 
     streamer_process.join()
-    frame_queue.put(None)  # p1 ends, Ensures detector exits
+    frame_queue.put(None)  # streamer_process ends, Ensures detector exits
     detector_process.join()
-    detect_queue.put(None)  # p2 ends, Ensures presenter exits
+    detect_queue.put(None)  # detector_process ends, Ensures presenter exits
     presenter_process.join()
 
 
