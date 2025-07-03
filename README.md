@@ -3,7 +3,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Motion Detection
 
-This small program gets a videos and detect motions using OpenCv detector 
+This small program gets a videos and detect motions using OpenCv detector.
 
 <!-- GETTING STARTED -->
 ## Getting Started
